@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'aws-rest-api
+
+  Sample SAM Template for aws-rest-api
+
+  '
+Globals:
+  Function:
+    Timeout: 3
+    Runtime: nodejs12.x
+    Handler: index.handler
+Resources:
+  AuthorsTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      TableName: Authors
+      PrimaryKey:
+        Name: id
+        Type: String
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      SSESpecification:
+        SSEEnabled: true
+  HelloWorldFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: HelloWorldFunction
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Path: /hello
+            Method: get
+  CreateAuthor:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: CreateAuthor
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: AuthorsTable
+      Events:
+        createAuthor:
+          Type: Api
+          Properties:
+            Path: /authors
+            Method: post
+  GetAllAuthors:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: GetAllAuthors
+      Policies:
+      - DynamoDBCrudPolicy:
+          TableName:
+            Ref: AuthorsTable
+      Events:
+        createAuthor:
+          Type: Api
+          Properties:
+            Path: /authors
+            Method: get
+Outputs:
+  HelloWorldApi:
+    Description: API Gateway endpoint URL for Prod stage for Hello World function
+    Value:
+      Fn::Sub: https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/
+  HelloWorldFunction:
+    Description: Hello World Lambda Function ARN
+    Value:
+      Fn::GetAtt:
+      - HelloWorldFunction
+      - Arn
+  HelloWorldFunctionIamRole:
+    Description: Implicit IAM Role created for Hello World function
+    Value:
+      Fn::GetAtt:
+      - HelloWorldFunctionRole
+      - Arn
